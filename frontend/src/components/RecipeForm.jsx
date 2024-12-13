@@ -1,127 +1,170 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../utils/axios';
+import { toast } from 'react-toastify';
 import Navbar from './Layout/Navbar';
 
-function RecipeForm({ recipe }) {
+function RecipeForm() {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    title: recipe?.title || '',
-    ingredients: recipe?.ingredients?.join('\n') || '',
-    instructions: recipe?.instructions || '',
-    cuisineType: recipe?.cuisineType || '',
-    cookingTime: recipe?.cookingTime || ''
+    title: '',
+    ingredients: '',
+    instructions: '',
+    cuisineType: '',
+    cookingTime: ''
   });
+
+  useEffect(() => {
+    if (id) {
+      fetchRecipe();
+    }
+  }, [id]);
+
+  const fetchRecipe = async () => {
+    try {
+      const response = await axios.get(`/recipes/${id}`);
+      const recipe = response.data;
+      setFormData({
+        title: recipe.title,
+        ingredients: recipe.ingredients.join('\n'),
+        instructions: recipe.instructions,
+        cuisineType: recipe.cuisineType,
+        cookingTime: recipe.cookingTime
+      });
+    } catch (error) {
+      toast.error('Error fetching recipe');
+      navigate('/recipes');
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
+      const ingredientsArray = formData.ingredients
+        .split('\n')
+        .filter(i => i.trim())
+        .map(i => i.trim());
+
       const recipeData = {
-        ...formData,
-        ingredients: formData.ingredients.split('\n').filter(i => i.trim())
+        title: formData.title,
+        ingredients: ingredientsArray,
+        instructions: formData.instructions,
+        cuisineType: formData.cuisineType,
+        cookingTime: Number(formData.cookingTime)
       };
 
-      if (recipe) {
-        await axios.put(`/recipes/${recipe._id}`, recipeData);
+      if (id) {
+        await axios.put(`/recipes/${id}`, recipeData);
+        toast.success('Recipe updated successfully!');
       } else {
         await axios.post('/recipes', recipeData);
+        toast.success('Recipe created successfully!');
       }
       navigate('/recipes');
     } catch (error) {
-      console.error('Error saving recipe:', error);
+      toast.error(error.response?.data?.message || 'Error saving recipe');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            {recipe ? 'Edit Recipe' : 'Create New Recipe'}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-2xl font-bold mb-6">
+            {id ? 'Edit Recipe' : 'Create New Recipe'}
           </h2>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Recipe Title
-              </label>
-              <input
-                type="text"
-                className="w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ingredients (one per line)
-              </label>
-              <textarea
-                className="w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                value={formData.ingredients}
-                onChange={(e) => setFormData({...formData, ingredients: e.target.value})}
-                rows="5"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Instructions
-              </label>
-              <textarea
-                className="w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                value={formData.instructions}
-                onChange={(e) => setFormData({...formData, instructions: e.target.value})}
-                rows="5"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Ingredients (one per line)
+                </label>
+                <textarea
+                  name="ingredients"
+                  value={formData.ingredients}
+                  onChange={handleChange}
+                  required
+                  rows={5}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Instructions
+                </label>
+                <textarea
+                  name="instructions"
+                  value={formData.instructions}
+                  onChange={handleChange}
+                  required
+                  rows={5}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
                   Cuisine Type
                 </label>
                 <input
                   type="text"
-                  className="w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  name="cuisineType"
                   value={formData.cuisineType}
-                  onChange={(e) => setFormData({...formData, cuisineType: e.target.value})}
+                  onChange={handleChange}
                   required
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700">
                   Cooking Time (minutes)
                 </label>
                 <input
                   type="number"
-                  className="w-full px-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  name="cookingTime"
                   value={formData.cookingTime}
-                  onChange={(e) => setFormData({...formData, cookingTime: e.target.value})}
+                  onChange={handleChange}
                   required
+                  min="1"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
-            </div>
 
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => navigate('/recipes')}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                disabled={loading}
+                className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+                  loading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
-                {recipe ? 'Update Recipe' : 'Create Recipe'}
+                {loading ? 'Saving...' : (id ? 'Update Recipe' : 'Create Recipe')}
               </button>
             </div>
           </form>
