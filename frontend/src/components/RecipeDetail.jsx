@@ -19,7 +19,7 @@ function RecipeDetail() {
       const response = await axios.get(`/recipes/${id}`);
       setRecipe(response.data);
     } catch (error) {
-      toast.error('Error fetching recipe details');
+      toast.error('Error fetching recipe');
       navigate('/recipes');
     } finally {
       setLoading(false);
@@ -40,97 +40,84 @@ function RecipeDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading recipe details...</p>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!recipe) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <p className="text-gray-600">Recipe not found</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!recipe) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="bg-white shadow-custom-lg rounded-xl overflow-hidden">
           <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-3xl font-bold text-gray-900">{recipe.title}</h1>
-              <div className="space-x-4">
+            <div className="flex justify-between items-start mb-6">
+              <h1 className="text-3xl font-bold text-secondary-800">{recipe.title}</h1>
+              <div className="flex space-x-3">
                 <Link
                   to={`/recipes/edit/${recipe._id}`}
-                  className="text-blue-600 hover:text-blue-800"
+                  className="px-4 py-2 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition duration-150"
                 >
-                  Edit
+                  Edit Recipe
                 </Link>
                 <button
                   onClick={handleDelete}
-                  className="text-red-600 hover:text-red-800"
+                  className="px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition duration-150"
                 >
                   Delete
                 </button>
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-secondary-50 p-4 rounded-lg">
+                <h3 className="text-sm font-medium text-secondary-500">Cuisine Type</h3>
+                <p className="mt-1 text-lg font-semibold text-secondary-900">{recipe.cuisineType}</p>
+              </div>
+              <div className="bg-secondary-50 p-4 rounded-lg">
+                <h3 className="text-sm font-medium text-secondary-500">Cooking Time</h3>
+                <p className="mt-1 text-lg font-semibold text-secondary-900">{recipe.cookingTime} minutes</p>
+              </div>
+            </div>
+
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  Cuisine Type
-                </h2>
-                <p className="text-gray-600">{recipe.cuisineType}</p>
-              </div>
-
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  Cooking Time
-                </h2>
-                <p className="text-gray-600">{recipe.cookingTime} minutes</p>
-              </div>
-
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  Ingredients
-                </h2>
-                <ul className="list-disc list-inside text-gray-600">
+                <h2 className="text-xl font-semibold text-secondary-900 mb-3">Ingredients</h2>
+                <ul className="bg-secondary-50 rounded-lg p-4 space-y-2">
                   {recipe.ingredients.map((ingredient, index) => (
-                    <li key={index}>{ingredient}</li>
+                    <li key={index} className="flex items-center text-secondary-700">
+                      <span className="w-2 h-2 bg-primary-500 rounded-full mr-2"></span>
+                      {ingredient}
+                    </li>
                   ))}
                 </ul>
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  Instructions
-                </h2>
-                <p className="text-gray-600 whitespace-pre-line">
-                  {recipe.instructions}
-                </p>
+                <h2 className="text-xl font-semibold text-secondary-900 mb-3">Instructions</h2>
+                <div className="bg-secondary-50 rounded-lg p-4">
+                  <p className="text-secondary-700 whitespace-pre-line">{recipe.instructions}</p>
+                </div>
               </div>
             </div>
 
             <div className="mt-8">
               <Link
                 to="/recipes"
-                className="text-indigo-600 hover:text-indigo-800"
+                className="inline-flex items-center text-primary-600 hover:text-primary-700 transition duration-150"
               >
-                ← Back to Recipes
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Recipes
               </Link>
             </div>
           </div>
