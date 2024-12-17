@@ -7,37 +7,39 @@ const auth = require('../middleware/auth');
 
 // Login route
 router.post('/login', async (req, res) => {
+  console.log('Received login request body:', req.body);
+
   try {
-    console.log('Login request received:', req.body);
-    
     const { email, password } = req.body;
 
-    // Input validation
+    // Basic validation
     if (!email || !password) {
-      console.log('Missing credentials');
       return res.status(400).json({
-        message: 'Please provide both email and password',
-        received: { email: !!email, password: !!password }
+        message: 'Email and password are required',
+        details: { email: !!email, password: !!password }
       });
     }
 
-    // Check for user
-    const user = await User.findOne({ email });
+    // Normalize email
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Find user
+    const user = await User.findOne({ email: normalizedEmail });
+    
     if (!user) {
-      console.log('User not found:', email);
+      console.log('User not found:', normalizedEmail);
       return res.status(400).json({
-        message: 'Invalid credentials',
-        detail: 'No user found with this email'
+        message: 'Invalid email or password'
       });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
+    
     if (!isMatch) {
-      console.log('Invalid password for user:', email);
+      console.log('Password mismatch for user:', normalizedEmail);
       return res.status(400).json({
-        message: 'Invalid credentials',
-        detail: 'Password does not match'
+        message: 'Invalid email or password'
       });
     }
 
@@ -55,9 +57,12 @@ router.post('/login', async (req, res) => {
       (err, token) => {
         if (err) {
           console.error('Token generation error:', err);
-          throw err;
+          return res.status(500).json({
+            message: 'Error generating authentication token'
+          });
         }
-        console.log('Login successful for user:', email);
+
+        // Send successful response
         res.json({
           token,
           user: {
@@ -69,10 +74,9 @@ router.post('/login', async (req, res) => {
       }
     );
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Server error during login:', error);
     res.status(500).json({
-      message: 'Server error',
-      detail: error.message
+      message: 'Server error during login'
     });
   }
 });

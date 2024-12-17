@@ -21,6 +21,10 @@ function Login() {
     }
   }, [navigate, redirect]);
 
+  useEffect(() => {
+    axios.testConnection();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -39,51 +43,55 @@ function Login() {
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast.error('Please enter a valid email address');
-      setLoading(false);
-      return;
-    }
-
     try {
-      console.log('Sending login request with data:', {
-        email: formData.email,
-        passwordLength: formData.password.length
-      });
-
       const requestData = {
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password
       };
 
-      const response = await axios.post('/auth/login', requestData);
-
-      console.log('Login response received:', {
-        status: response.status,
-        hasToken: !!response.data?.token
+      console.log('Attempting login with data:', {
+        email: requestData.email,
+        passwordLength: requestData.password.length
       });
+
+      const response = await axios.post('/auth/login', requestData);
 
       if (response.data?.token) {
         localStorage.setItem('token', response.data.token);
         toast.success('Login successful!');
         navigate(redirect);
       } else {
-        throw new Error('No token received from server');
+        console.error('Invalid response format:', response.data);
+        toast.error('Server response missing token');
       }
     } catch (error) {
-      console.error('Login error:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
+      console.error('Login attempt failed:', {
+        error: error.message,
+        response: error.response?.data,
+        status: error.response?.status
       });
 
-      if (error.response?.status === 400) {
-        toast.error(error.response.data?.message || 'Invalid credentials');
-      } else if (error.response?.status === 500) {
-        toast.error('Server error. Please try again later.');
+      if (error.response) {
+        switch (error.response.status) {
+          case 400:
+            toast.error(error.response.data?.message || 'Invalid credentials');
+            break;
+          case 401:
+            toast.error('Unauthorized access');
+            break;
+          case 404:
+            toast.error('Login service not found');
+            break;
+          case 500:
+            toast.error('Server error. Please try again later');
+            break;
+          default:
+            toast.error(`Error: ${error.response.data?.message || 'Unknown error occurred'}`);
+        }
+      } else if (error.request) {
+        toast.error('No response from server. Please check your connection');
       } else {
-        toast.error('Login failed. Please check your connection and try again.');
+        toast.error('Error setting up request');
       }
     } finally {
       setLoading(false);
