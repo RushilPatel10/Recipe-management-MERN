@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from '../utils/axios';
 import { toast } from 'react-toastify';
@@ -14,16 +14,6 @@ function Login() {
     password: ''
   });
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (localStorage.getItem('token')) {
-      navigate(redirect);
-    }
-  }, [navigate, redirect]);
-
-  useEffect(() => {
-    axios.testConnection();
-  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,54 +34,38 @@ function Login() {
     }
 
     try {
-      const requestData = {
-        email: formData.email.trim(),
+      const loginData = {
+        email: formData.email.trim().toLowerCase(),
         password: formData.password
       };
 
-      console.log('Attempting login with data:', {
-        email: requestData.email,
-        passwordLength: requestData.password.length
+      console.log('Attempting login with:', {
+        email: loginData.email,
+        passwordLength: loginData.password.length
       });
 
-      const response = await axios.post('/auth/login', requestData);
+      const response = await axios.post('/auth/login', loginData);
 
       if (response.data?.token) {
         localStorage.setItem('token', response.data.token);
         toast.success('Login successful!');
         navigate(redirect);
       } else {
-        console.error('Invalid response format:', response.data);
-        toast.error('Server response missing token');
+        throw new Error('Invalid response from server');
       }
     } catch (error) {
-      console.error('Login attempt failed:', {
-        error: error.message,
-        response: error.response?.data,
-        status: error.response?.status
+      console.error('Login error:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
       });
 
-      if (error.response) {
-        switch (error.response.status) {
-          case 400:
-            toast.error(error.response.data?.message || 'Invalid credentials');
-            break;
-          case 401:
-            toast.error('Unauthorized access');
-            break;
-          case 404:
-            toast.error('Login service not found');
-            break;
-          case 500:
-            toast.error('Server error. Please try again later');
-            break;
-          default:
-            toast.error(`Error: ${error.response.data?.message || 'Unknown error occurred'}`);
-        }
-      } else if (error.request) {
-        toast.error('No response from server. Please check your connection');
+      if (error.response?.status === 404) {
+        toast.error('Server endpoint not found. Please try again later.');
+      } else if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
       } else {
-        toast.error('Error setting up request');
+        toast.error('Login failed. Please check your credentials and try again.');
       }
     } finally {
       setLoading(false);

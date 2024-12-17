@@ -12,10 +12,10 @@ const instance = axios.create({
 // Request interceptor
 instance.interceptors.request.use(
   (config) => {
-    console.log('Making request to:', config.url, {
+    console.log('Making request:', {
+      url: config.url,
       method: config.method,
-      headers: config.headers,
-      data: config.data
+      baseURL: config.baseURL
     });
     
     const token = localStorage.getItem('token');
@@ -35,17 +35,18 @@ instance.interceptors.response.use(
   (response) => {
     console.log('Response received:', {
       status: response.status,
-      data: response.data
+      url: response.config.url
     });
     return response;
   },
   (error) => {
-    console.error('Response error details:', {
+    console.error('Response error:', {
       message: error.message,
-      response: error.response?.data,
-      status: error.response?.status
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url
     });
-    
+
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
