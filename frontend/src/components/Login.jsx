@@ -30,12 +30,20 @@ function Login() {
     setLoading(true);
 
     try {
+      console.log('Sending login request with:', formData);
       const response = await axios.post('/auth/login', formData);
-      localStorage.setItem('token', response.data.token);
-      toast.success('Login successful!');
-      navigate(redirect);
+      console.log('Login response:', response.data);
+      
+      if (response.data && response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        toast.success('Login successful!');
+        navigate(redirect);
+      } else {
+        throw new Error('No token received');
+      }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      console.error('Login error:', error.response || error);
+      toast.error(error.response?.data?.message || 'Invalid email or password');
     } finally {
       setLoading(false);
     }
@@ -52,10 +60,8 @@ function Login() {
             Welcome Back
           </h2>
         </div>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-custom-lg rounded-xl sm:px-10 border border-secondary-100">
+        <div className="mt-8 bg-white py-8 px-4 shadow-custom sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-secondary-700">
@@ -70,8 +76,7 @@ function Login() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-secondary-300 rounded-lg shadow-sm placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-150"
-                  placeholder="Enter your email"
+                  className="appearance-none block w-full px-3 py-2 border border-secondary-300 rounded-md shadow-sm placeholder-secondary-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
             </div>
@@ -89,8 +94,7 @@ function Login() {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-secondary-300 rounded-lg shadow-sm placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-150"
-                  placeholder="Enter your password"
+                  className="appearance-none block w-full px-3 py-2 border border-secondary-300 rounded-md shadow-sm placeholder-secondary-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
             </div>
@@ -99,7 +103,7 @@ function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-150 ${
+                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
                   loading ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
@@ -132,7 +136,7 @@ function Login() {
             <div className="mt-6">
               <Link
                 to="/register"
-                className="w-full flex justify-center py-2.5 px-4 border border-secondary-300 rounded-lg shadow-sm text-sm font-medium text-secondary-700 bg-white hover:bg-secondary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-150"
+                className="w-full flex justify-center py-2 px-4 border border-secondary-300 rounded-md shadow-sm text-sm font-medium text-secondary-700 bg-white hover:bg-secondary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
               >
                 Create an account
               </Link>
