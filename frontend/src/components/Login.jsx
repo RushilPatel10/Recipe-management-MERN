@@ -22,46 +22,69 @@ function Login() {
   }, [navigate, redirect]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value.trim()
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    try {
-      if (!formData.email || !formData.password) {
-        toast.error('Please fill in all fields');
-        return;
-      }
+    if (!formData.email || !formData.password) {
+      toast.error('Please fill in all fields');
+      setLoading(false);
+      return;
+    }
 
-      console.log('Attempting login with:', {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      console.log('Sending login request with data:', {
         email: formData.email,
-        password: formData.password.length + ' characters'
+        passwordLength: formData.password.length
       });
 
-      const response = await axios.post('/auth/login', formData);
-      
-      console.log('Server response:', response);
+      const requestData = {
+        email: formData.email,
+        password: formData.password
+      };
 
-      if (response.data && response.data.token) {
+      const response = await axios.post('/auth/login', requestData);
+
+      console.log('Login response received:', {
+        status: response.status,
+        hasToken: !!response.data?.token
+      });
+
+      if (response.data?.token) {
         localStorage.setItem('token', response.data.token);
         toast.success('Login successful!');
         navigate(redirect);
       } else {
-        console.error('Invalid response format:', response.data);
-        throw new Error('Invalid response format');
+        throw new Error('No token received from server');
       }
     } catch (error) {
-      console.error('Full error object:', error);
-      console.error('Error response:', error.response);
-      console.error('Error message:', error.message);
-      
-      const errorMessage = error.response?.data?.message 
-        || error.message 
-        || 'Login failed. Please check your credentials.';
-      
-      toast.error(errorMessage);
+      console.error('Login error:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+
+      if (error.response?.status === 400) {
+        toast.error(error.response.data?.message || 'Invalid credentials');
+      } else if (error.response?.status === 500) {
+        toast.error('Server error. Please try again later.');
+      } else {
+        toast.error('Login failed. Please check your connection and try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -80,7 +103,7 @@ function Login() {
         </div>
 
         <div className="mt-8 bg-white py-8 px-4 shadow-custom sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-secondary-700">
                 Email address
@@ -95,6 +118,7 @@ function Login() {
                   value={formData.email}
                   onChange={handleChange}
                   className="appearance-none block w-full px-3 py-2 border border-secondary-300 rounded-md shadow-sm placeholder-secondary-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Enter your email"
                 />
               </div>
             </div>
@@ -113,6 +137,7 @@ function Login() {
                   value={formData.password}
                   onChange={handleChange}
                   className="appearance-none block w-full px-3 py-2 border border-secondary-300 rounded-md shadow-sm placeholder-secondary-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Enter your password"
                 />
               </div>
             </div>
@@ -125,17 +150,7 @@ function Login() {
                   loading ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                {loading ? (
-                  <div className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Signing in...
-                  </div>
-                ) : (
-                  'Sign in'
-                )}
+                {loading ? 'Signing in...' : 'Sign in'}
               </button>
             </div>
           </form>
@@ -151,6 +166,7 @@ function Login() {
                 </span>
               </div>
             </div>
+
             <div className="mt-6">
               <Link
                 to="/register"
