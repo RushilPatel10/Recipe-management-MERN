@@ -18,6 +18,7 @@ instance.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error('Request error:', error);
     return Promise.reject(error);
   }
 );
@@ -25,6 +26,7 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.error('Response error:', error);
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';

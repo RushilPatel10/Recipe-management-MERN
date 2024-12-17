@@ -18,18 +18,21 @@ app.use(cors({
 app.use(express.json());
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/recipes', require('./routes/recipes'));
+const authRoutes = require('./routes/auth');
+const recipeRoutes = require('./routes/recipes');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/recipes', recipeRoutes);
+
+// Root route for API health check
+app.get('/', (req, res) => {
+  res.json({ message: 'Recipe Management API is running' });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Something went wrong!' });
-});
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
 });
 
 const PORT = process.env.PORT || 5000;
