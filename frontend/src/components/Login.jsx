@@ -33,16 +33,11 @@ function Login() {
         password: formData.password
       };
 
-      // Validate input
       if (!loginData.email || !loginData.password) {
         toast.error('Please fill in all fields');
+        setLoading(false);
         return;
       }
-
-      console.log('Sending login request:', {
-        email: loginData.email,
-        passwordLength: loginData.password.length
-      });
 
       const response = await axios.post('/auth/login', loginData);
 
@@ -51,19 +46,17 @@ function Login() {
         toast.success('Login successful!');
         navigate(redirect);
       } else {
-        throw new Error('No token received from server');
+        throw new Error('Invalid response from server');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      
-      if (error.data?.message) {
-        toast.error(error.data.message);
-      } else if (error.status === 400) {
-        toast.error('Invalid credentials');
+      if (error.status === 400) {
+        toast.error(error.data?.message || 'Invalid credentials');
       } else if (error.status === 404) {
-        toast.error('Server endpoint not found');
+        toast.error('Login service not available');
+      } else if (error.status === 500) {
+        toast.error('Server error. Please try again later');
       } else {
-        toast.error('Login failed. Please try again.');
+        toast.error('Login failed. Please try again');
       }
     } finally {
       setLoading(false);

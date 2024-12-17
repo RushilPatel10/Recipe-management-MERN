@@ -12,12 +12,7 @@ const instance = axios.create({
 // Request interceptor
 instance.interceptors.request.use(
   (config) => {
-    // Log request details
-    console.log('Request details:', {
-      url: `${config.baseURL}${config.url}`,
-      method: config.method,
-      data: config.data
-    });
+    config.url = `${config.API_PREFIX || '/api'}${config.url}`;
     
     const token = localStorage.getItem('token');
     if (token) {
@@ -25,30 +20,18 @@ instance.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    console.error('Request interceptor error:', error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor
 instance.interceptors.response.use(
-  (response) => {
-    console.log('Response success:', {
-      status: response.status,
-      data: response.data
-    });
-    return response;
-  },
+  (response) => response,
   (error) => {
-    const errorDetails = {
-      message: error.message,
+    return Promise.reject({
       status: error.response?.status,
       data: error.response?.data,
-      url: error.config?.url
-    };
-    console.error('Response error details:', errorDetails);
-    return Promise.reject(errorDetails);
+      message: error.response?.data?.message || error.message
+    });
   }
 );
 
