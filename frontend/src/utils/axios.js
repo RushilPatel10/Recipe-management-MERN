@@ -6,12 +6,18 @@ const instance = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  withCredentials: true
+  withCredentials: false
 });
 
-// Add request interceptor
+// Request interceptor
 instance.interceptors.request.use(
   (config) => {
+    console.log('Making request to:', config.url, {
+      method: config.method,
+      headers: config.headers,
+      data: config.data
+    });
+    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -24,11 +30,22 @@ instance.interceptors.request.use(
   }
 );
 
-// Add response interceptor
+// Response interceptor
 instance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('Response received:', {
+      status: response.status,
+      data: response.data
+    });
+    return response;
+  },
   (error) => {
-    console.error('Response error:', error);
+    console.error('Response error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';

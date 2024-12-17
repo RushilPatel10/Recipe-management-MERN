@@ -8,23 +8,37 @@ const auth = require('../middleware/auth');
 // Login route
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    console.log('Login request received:', req.body);
     
-    // Validate input
+    const { email, password } = req.body;
+
+    // Input validation
     if (!email || !password) {
-      return res.status(400).json({ message: 'Please provide email and password' });
+      console.log('Missing credentials');
+      return res.status(400).json({
+        message: 'Please provide both email and password',
+        received: { email: !!email, password: !!password }
+      });
     }
 
     // Check for user
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      console.log('User not found:', email);
+      return res.status(400).json({
+        message: 'Invalid credentials',
+        detail: 'No user found with this email'
+      });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      console.log('Invalid password for user:', email);
+      return res.status(400).json({
+        message: 'Invalid credentials',
+        detail: 'Password does not match'
+      });
     }
 
     // Create token
@@ -39,13 +53,27 @@ router.post('/login', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '24h' },
       (err, token) => {
-        if (err) throw err;
-        res.json({ token });
+        if (err) {
+          console.error('Token generation error:', err);
+          throw err;
+        }
+        console.log('Login successful for user:', email);
+        res.json({
+          token,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name
+          }
+        });
       }
     );
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({
+      message: 'Server error',
+      detail: error.message
+    });
   }
 });
 

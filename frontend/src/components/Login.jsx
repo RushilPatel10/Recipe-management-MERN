@@ -30,20 +30,38 @@ function Login() {
     setLoading(true);
 
     try {
-      console.log('Sending login request with:', formData);
+      if (!formData.email || !formData.password) {
+        toast.error('Please fill in all fields');
+        return;
+      }
+
+      console.log('Attempting login with:', {
+        email: formData.email,
+        password: formData.password.length + ' characters'
+      });
+
       const response = await axios.post('/auth/login', formData);
-      console.log('Login response:', response.data);
       
+      console.log('Server response:', response);
+
       if (response.data && response.data.token) {
         localStorage.setItem('token', response.data.token);
         toast.success('Login successful!');
         navigate(redirect);
       } else {
-        throw new Error('No token received');
+        console.error('Invalid response format:', response.data);
+        throw new Error('Invalid response format');
       }
     } catch (error) {
-      console.error('Login error:', error.response || error);
-      toast.error(error.response?.data?.message || 'Invalid email or password');
+      console.error('Full error object:', error);
+      console.error('Error response:', error.response);
+      console.error('Error message:', error.message);
+      
+      const errorMessage = error.response?.data?.message 
+        || error.message 
+        || 'Login failed. Please check your credentials.';
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
