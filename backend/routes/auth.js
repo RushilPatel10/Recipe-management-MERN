@@ -7,43 +7,40 @@ const auth = require('../middleware/auth');
 
 // Login route
 router.post('/login', async (req, res) => {
-  console.log('Received login request body:', req.body);
-
   try {
+    console.log('Login request received:', {
+      body: req.body,
+      contentType: req.headers['content-type']
+    });
+
     const { email, password } = req.body;
 
-    // Basic validation
+    // Input validation
     if (!email || !password) {
       return res.status(400).json({
-        message: 'Email and password are required',
-        details: { email: !!email, password: !!password }
+        message: 'Email and password are required'
       });
     }
-
-    // Normalize email
-    const normalizedEmail = email.toLowerCase().trim();
 
     // Find user
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = await User.findOne({ email: email.toLowerCase() });
     
     if (!user) {
-      console.log('User not found:', normalizedEmail);
       return res.status(400).json({
-        message: 'Invalid email or password'
+        message: 'Invalid credentials'
       });
     }
 
-    // Check password
+    // Verify password
     const isMatch = await bcrypt.compare(password, user.password);
     
     if (!isMatch) {
-      console.log('Password mismatch for user:', normalizedEmail);
       return res.status(400).json({
-        message: 'Invalid email or password'
+        message: 'Invalid credentials'
       });
     }
 
-    // Create token
+    // Generate token
     const payload = {
       user: {
         id: user.id
@@ -58,11 +55,11 @@ router.post('/login', async (req, res) => {
         if (err) {
           console.error('Token generation error:', err);
           return res.status(500).json({
-            message: 'Error generating authentication token'
+            message: 'Error generating token'
           });
         }
 
-        // Send successful response
+        // Send success response
         res.json({
           token,
           user: {
@@ -74,9 +71,10 @@ router.post('/login', async (req, res) => {
       }
     );
   } catch (error) {
-    console.error('Server error during login:', error);
+    console.error('Server error:', error);
     res.status(500).json({
-      message: 'Server error during login'
+      message: 'Server error',
+      error: error.message
     });
   }
 });

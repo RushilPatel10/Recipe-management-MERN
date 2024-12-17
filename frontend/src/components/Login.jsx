@@ -27,19 +27,19 @@ function Login() {
     e.preventDefault();
     setLoading(true);
 
-    if (!formData.email || !formData.password) {
-      toast.error('Please fill in all fields');
-      setLoading(false);
-      return;
-    }
-
     try {
       const loginData = {
         email: formData.email.trim().toLowerCase(),
         password: formData.password
       };
 
-      console.log('Attempting login with:', {
+      // Validate input
+      if (!loginData.email || !loginData.password) {
+        toast.error('Please fill in all fields');
+        return;
+      }
+
+      console.log('Sending login request:', {
         email: loginData.email,
         passwordLength: loginData.password.length
       });
@@ -51,21 +51,19 @@ function Login() {
         toast.success('Login successful!');
         navigate(redirect);
       } else {
-        throw new Error('Invalid response from server');
+        throw new Error('No token received from server');
       }
     } catch (error) {
-      console.error('Login error:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
-
-      if (error.response?.status === 404) {
-        toast.error('Server endpoint not found. Please try again later.');
-      } else if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
+      console.error('Login error:', error);
+      
+      if (error.data?.message) {
+        toast.error(error.data.message);
+      } else if (error.status === 400) {
+        toast.error('Invalid credentials');
+      } else if (error.status === 404) {
+        toast.error('Server endpoint not found');
       } else {
-        toast.error('Login failed. Please check your credentials and try again.');
+        toast.error('Login failed. Please try again.');
       }
     } finally {
       setLoading(false);

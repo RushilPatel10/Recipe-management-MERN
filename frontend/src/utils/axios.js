@@ -4,18 +4,19 @@ import config from '../config/config';
 const instance = axios.create({
   baseURL: config.API_URL,
   headers: {
-    'Content-Type': 'application/json'
-  },
-  withCredentials: false
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  }
 });
 
 // Request interceptor
 instance.interceptors.request.use(
   (config) => {
-    console.log('Making request:', {
-      url: config.url,
+    // Log request details
+    console.log('Request details:', {
+      url: `${config.baseURL}${config.url}`,
       method: config.method,
-      baseURL: config.baseURL
+      data: config.data
     });
     
     const token = localStorage.getItem('token');
@@ -25,7 +26,7 @@ instance.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error('Request error:', error);
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -33,25 +34,21 @@ instance.interceptors.request.use(
 // Response interceptor
 instance.interceptors.response.use(
   (response) => {
-    console.log('Response received:', {
+    console.log('Response success:', {
       status: response.status,
-      url: response.config.url
+      data: response.data
     });
     return response;
   },
   (error) => {
-    console.error('Response error:', {
+    const errorDetails = {
       message: error.message,
       status: error.response?.status,
       data: error.response?.data,
       url: error.config?.url
-    });
-
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
+    };
+    console.error('Response error details:', errorDetails);
+    return Promise.reject(errorDetails);
   }
 );
 
