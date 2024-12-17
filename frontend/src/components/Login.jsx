@@ -1,15 +1,25 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from '../utils/axios';
 import { toast } from 'react-toastify';
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const redirect = searchParams.get('redirect') || '/recipes';
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem('token')) {
+      navigate(redirect);
+    }
+  }, [navigate, redirect]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -23,7 +33,7 @@ function Login() {
       const response = await axios.post('/auth/login', formData);
       localStorage.setItem('token', response.data.token);
       toast.success('Login successful!');
-      navigate('/recipes');
+      navigate(redirect);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed');
     } finally {
